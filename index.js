@@ -4,7 +4,7 @@ const port = 8080;
 const classRecordsRouter = require("./routes/classRecords");
 const memberRouter = require("./routes/members");
 const lessonRouter = require("./routes/lessons");
-
+const addNewRecordRouter = require("./routes/addNewRecord");
 
 app.use(express.json());
 app.use(
@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
 app.use("/class-records", classRecordsRouter);
 app.use("/members", memberRouter);
 app.use("/lessons", lessonRouter);
+app.post("/addNewRecord", addNewRecordRouter);
 /* Error handler middleware */
 // app.use((err, req, res, next) => {
 //   const statusCode = err.statusCode || 500;
