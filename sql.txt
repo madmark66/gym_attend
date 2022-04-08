@@ -1,0 +1,41 @@
+---某月已收現金
+SELECT Sum(payment_amount) AS collect
+FROM payment
+WHERE (((payment.[payment_date])>=#3/1/2022#));
+
+---某天來的有誰
+SELECT *
+FROM classRecord;
+
+---算某月營收
+SELECT sum(lesson_unit_price) AS revenue
+FROM lesson RIGHT JOIN classRecord ON lesson.lesson_name = classRecord.lesson_name
+WHERE class_date >= #2022/3/1#;
+
+---最近繳費後上課次數/上課日期
+SELECT member_name, lesson_name, lastPayDay, MAX(class_1) AS class_1, MAX(class_2) AS class_2, MAX(class_3) AS class_2, 8-COUNT(*) AS remaining
+ FROM
+      (  
+        SELECT c.member_name, c.lesson_name, c.lastPayDay,
+         (CASE
+          WHEN ColumnSequence = 'class_1' THEN class_date ELSE '' END
+         ) AS class_1, 
+         (CASE
+          WHEN ColumnSequence = 'class_2' THEN class_date ELSE '' END
+         ) AS class_2, 
+         (CASE
+          WHEN ColumnSequence = 'class_3' THEN class_date ELSE '' END
+         ) AS class_3
+
+        FROM (
+                SELECT e.member_name, e.lesson_name, e.class_date, e.lastPayDay, concat('class_', ROW_NUMBER() over 
+                (PARTITION BY e.member_name, e.lesson_name ORDER BY e.member_name, e.lesson_name)) AS ColumnSequence
+                FROM
+                    (SELECT a.member_name, a.lesson_name, a.class_date, t.lastPayDay FROM classRecord AS a 
+                    LEFT JOIN 
+                    (SELECT member_name, lesson_name, MAX(payment_date) AS lastPayDay FROM payment GROUP BY member_name, lesson_name)  AS t 
+                    ON (a.lesson_name = t.lesson_name) AND (a.member_name = t.member_name) 
+                    WHERE a.class_date >= t.lastPayDay) AS e
+             ) as c
+       ) as b
+GROUP BY member_name, lesson_name, lastPayDay  
