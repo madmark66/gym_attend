@@ -45,29 +45,34 @@ app.post("/addNewRecord", (req, res) => {
 });
 
 //api for revenue
-app.post("/revenue", (req, res) => {
-
-  const fromDate = req.body.fromDate;
-  const toDate = req.body.toDate;
-
-  app.get('/', async function(req, res, next) {
+ 
+app.get('/revenue', async function(req, res, next) {
     try {
      
       res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
+      const fromDate = req.query.fromDate;
+      const toDate = req.query.toDate;
+      
+      console.log(fromDate);
+      console.log(toDate);
+
       const revenue = await db.query(
-        `SELECT * FROM classRecord ` //sql query for selecting revenue between fromDate , toDate
+        `SELECT sum(lesson_unit_price) AS revenue
+        FROM lessons JOIN classRecord ON lessons.lesson_name = classRecord.lesson_name 
+        WHERE class_date >= '2022-04-01' AND class_date <= '2022-04-30';`,
+        (err, result) => {
+          console.log(err);
+        } //sql query for selecting revenue between fromDate , toDate
       );
-      res.json(revenue);
+      await res.send(revenue);
     } catch (err) {
-      console.error(`Error while getting class records `, err.message);
+      console.error(`Error while getting revenus `, err.message);
       next(err);
     }
-  });
 });
 
 //api for personShowedUp
-//api for revenue
 app.post("/personShowedUp", (req, res) => {
 
   const showedUpDate = req.body.showedUpDate;

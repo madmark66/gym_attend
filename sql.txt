@@ -9,11 +9,12 @@ FROM classRecord;
 
 ---算某月營收
 SELECT sum(lesson_unit_price) AS revenue
-FROM lesson RIGHT JOIN classRecord ON lesson.lesson_name = classRecord.lesson_name
-WHERE class_date >= #2022/3/1#;
+        FROM lessons JOIN classRecord ON lessons.lesson_name = classRecord.lesson_name 
+        WHERE class_date >= '2022-04-01' AND class_date <= '2022-04-30';
 
 ---最近繳費後上課次數/上課日期
-SELECT member_name, lesson_name, lastPayDay, MAX(class_1) AS class_1, MAX(class_2) AS class_2, MAX(class_3) AS class_2, 8-COUNT(*) AS remaining
+SELECT member_name, lesson_name, lastPayDay, 8-COUNT(*) AS remainin, MAX(class_1) AS class_1, MAX(class_2) AS class_2
+, MAX(class_3) AS class_3, MAX(class_4) AS class_4, MAX(class_5) AS class_5, MAX(class_6) AS class_6, MAX(class_7) AS class_7, MAX(class_8) AS class_8
  FROM
       (  
         SELECT c.member_name, c.lesson_name, c.lastPayDay,
@@ -25,7 +26,22 @@ SELECT member_name, lesson_name, lastPayDay, MAX(class_1) AS class_1, MAX(class_
          ) AS class_2, 
          (CASE
           WHEN ColumnSequence = 'class_3' THEN class_date ELSE '' END
-         ) AS class_3
+         ) AS class_3,
+         (CASE
+          WHEN ColumnSequence = 'class_4' THEN class_date ELSE '' END
+         ) AS class_4,
+         (CASE
+          WHEN ColumnSequence = 'class_5' THEN class_date ELSE '' END
+         ) AS class_5,
+         (CASE
+          WHEN ColumnSequence = 'class_6' THEN class_date ELSE '' END
+         ) AS class_6,
+         (CASE
+          WHEN ColumnSequence = 'class_7' THEN class_date ELSE '' END
+         ) AS class_7,
+         (CASE
+          WHEN ColumnSequence = 'class_8' THEN class_date ELSE '' END
+         ) AS class_8
 
         FROM (
                 SELECT e.member_name, e.lesson_name, e.class_date, e.lastPayDay, concat('class_', ROW_NUMBER() over 
@@ -38,4 +54,7 @@ SELECT member_name, lesson_name, lastPayDay, MAX(class_1) AS class_1, MAX(class_
                     WHERE a.class_date >= t.lastPayDay) AS e
              ) as c
        ) as b
-GROUP BY member_name, lesson_name, lastPayDay  
+GROUP BY member_name, lesson_name, lastPayDay 
+
+
+
