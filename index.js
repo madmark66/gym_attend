@@ -3,6 +3,7 @@ const app = express();
 const port = 8080;
 const classRecordsRouter = require("./routes/classRecords");
 const memberRouter = require("./routes/members");
+const paymentRouter = require("./routes/payments");
 const lessonRouter = require("./routes/lessons");
 const addNewRecordRouter = require("./routes/addNewRecord");
 const remainingDeadlineRouter = require("./routes/remainingDeadline");
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
 });
 app.use("/class-records", classRecordsRouter);
 app.use("/members", memberRouter);
+app.use("/payments", paymentRouter);
 app.use("/lessons", lessonRouter);
 // app.use("/addNewRecord", addNewRecordRouter);
 
@@ -44,6 +46,23 @@ app.post("/addNewRecord", (req, res) => {
   )
 });
 
+
+//api for addPaymentRecord
+app.post("/addPaymentRecord", (req, res) => {
+
+  const member_name = req.body.member_name;
+  const lesson_name = req.body.lesson_name;
+  const payment_date = req.body.payment_date;
+  const payment_amount = req.body.payment_amount;
+
+  db.query(
+  `INSERT INTO payment (member_name, lesson_name, payment_date, payment_amount) VALUE (?,?,?,?)`,
+    [member_name, lesson_name, payment_date, payment_amount], (err, result) => {
+        console.log(err);
+        }
+  )
+});
+
 //api for revenue
  
 app.get('/revenue', async function(req, res, next) {
@@ -60,37 +79,39 @@ app.get('/revenue', async function(req, res, next) {
       const revenue = await db.query(
         `SELECT sum(lesson_unit_price) AS revenue
         FROM lessons JOIN classRecord ON lessons.lesson_name = classRecord.lesson_name 
-        WHERE class_date >= '2022-04-01' AND class_date <= '2022-04-30';`,
-        (err, result) => {
-          console.log(err);
-        } //sql query for selecting revenue between fromDate , toDate
-      );
+        WHERE class_date >= '${fromDate}' AND class_date <= '${toDate}';`,
+        // (err, result) => {
+        //   console.log(err);
+        // } 
+      );//sql query for selecting revenue between fromDate , toDate
       await res.send(revenue);
     } catch (err) {
       console.error(`Error while getting revenus `, err.message);
-      next(err);
+      // next(err);
     }
 });
 
 //api for personShowedUp
-app.post("/personShowedUp", (req, res) => {
+app.get('/personShowedUp', async function(req, res, next) {
+  try {
+   
+    res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-  const showedUpDate = req.body.showedUpDate;
+    const showedUpDate = req.query.showedUpDate;
 
-  app.get('/', async function(req, res, next) {
-    try {
-     
-      res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
-
-      const person = await db.query(
-        `SELECT * FROM classRecord ` //sql query for selecting person Showed up on showedUpDate
-      );
-      res.json(person);
-    } catch (err) {
-      console.error(`Error while getting class records `, err.message);
-      next(err);
-    }
-  });
+    const person = await db.query(
+      `SELECT member_name
+      FROM classRecord 
+      WHERE class_date = '${showedUpDate}';`,
+      // (err, result) => {
+      //   console.log(err);
+      // } 
+    );//sql query for selecting revenue between fromDate , toDate
+    await res.send(person);
+  } catch (err) {
+    console.error(`Error while getting person `, err.message);
+    // next(err);
+  }
 });
 
 app.listen(port, () => {
