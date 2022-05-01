@@ -11,21 +11,93 @@ const req = require("express/lib/request");
 const res = require("express/lib/response");
 const cors = require('cors');
 const db = require('./services/db');
+const brypt = require("bcrypt");
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const User = require("./model/User");
+const {registerValidation, loginValidation} = require('./validation')
 
-app.use(express.json());
+
+app.use(express.json()); //可以讓app接受json
 app.use(
   express.urlencoded({
     extended: true,
   })
 );
+
 app.get("/", (req, res) => {
   res.json({ message: "ok" });
 });
+
+// Connect to mongo DB
+dotenv.config();
+
+mongoose.connect(
+  process.env.DB_CONNECT,
+  ()=>console.log('connected to db!!')
+);
+
+
+//pretend to be a users data in database
+const users = []
+
+//api for register  
+app.post("/register", async (req, res) =>{
+  
+  //申請帳號表單驗證
+const {error} = registerValidation(req.body);
+if(error) return res.status(400).send(error.details[0].message);
+
+  //確認USER是否已存在
+  const emailExist = await User.findOne({email: req.body.email})
+  if(emailExist) return res.status(400).send('email already exist');
+
+
+ //hash password
+ const salt = await brypt.genSalt()
+ const hashedPassword = await brypt.hash(req.body.password, salt)
+
+ //驗證OK存到DB
+ 
+  const user = new User({
+    name: req.body.name, 
+    email: req.body.email,
+    password: hashedPassword
+  });
+  try{
+    const savedUser = await user.save();
+    res.send({user: user._id});
+  } catch(err){
+    res.status(400).send(err);
+  }
+   
+});
+
+
+//api for login
+app.post("/login", async (req, res) =>{
+  //申請帳號表單驗證
+  const {error} = await loginValidation(req.body);
+  if(error) return res.status(400).send(error.details[0].message);
+
+  //確認USER是否已存在
+  const user = await User.findOne({email: req.body.email})
+  if(!user) return res.status(400).send('email not found');
+
+  //輸入Password 比較DB內Password是否相同
+  const validPass = await brypt.compare(req.body.password, user.password);
+  if(!validPass) return res.status(400).send('wrong password')
+
+  res.send('login!!')
+   
+});
+
+
+//api for many different pages
 app.use("/class-records", classRecordsRouter);
 app.use("/members", memberRouter);
 app.use("/payments", paymentRouter);
 app.use("/lessons", lessonRouter);
-// app.use("/addNewRecord", addNewRecordRouter);
 
 app.use("/remainingDeadline", remainingDeadlineRouter);
 
@@ -64,7 +136,6 @@ app.post("/addPaymentRecord", (req, res) => {
 });
 
 //api for revenue
- 
 app.get('/revenue', async function(req, res, next) {
     try {
      
@@ -73,21 +144,16 @@ app.get('/revenue', async function(req, res, next) {
       const fromDate = req.query.fromDate;
       const toDate = req.query.toDate;
       
-      console.log(fromDate);
-      console.log(toDate);
-
       const revenue = await db.query(
         `SELECT sum(lesson_unit_price) AS revenue
         FROM lessons JOIN classRecord ON lessons.lesson_name = classRecord.lesson_name 
         WHERE class_date >= '${fromDate}' AND class_date <= '${toDate}';`,
-        // (err, result) => {
-        //   console.log(err);
-        // } 
-      );//sql query for selecting revenue between fromDate , toDate
+        
+      );
       await res.send(revenue);
     } catch (err) {
       console.error(`Error while getting revenus `, err.message);
-      // next(err);
+      
     }
 });
 
@@ -99,14 +165,13 @@ app.get('/personShowedUp', async function(req, res, next) {
 
     const showedUpDate = req.query.showedUpDate;
 
+
     const person = await db.query(
       `SELECT member_name
       FROM classRecord 
-      WHERE class_date = '${showedUpDate}';`,
-      // (err, result) => {
-      //   console.log(err);
-      // } 
-    );//sql query for selecting revenue between fromDate , toDate
+      WHERE class_date = '${showedUpDate}';`,  
+    );
+    
     await res.send(person);
   } catch (err) {
     console.error(`Error while getting person `, err.message);
