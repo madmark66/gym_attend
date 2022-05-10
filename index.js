@@ -31,21 +31,20 @@ app.get("/", (req, res) => {
 
 // Connect to mongo DB
 dotenv.config();
-
 mongoose.connect(
-  process.env.DB_CONNECT,
-  ()=>console.log('connected to db!!')
+process.env.DB_CONNECT,
+()=>console.log('connected to db from outside!!')
 );
 
 
-//pretend to be a users data in database
-const users = []
 
 //api for register  
 app.post("/register", async (req, res) =>{
-  
+
+//await res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
   //申請帳號表單驗證
-const {error} = registerValidation(req.body);
+const {error} = await registerValidation(req.body);
 if(error) return res.status(400).send(error.details[0].message);
 
   //確認USER是否已存在
@@ -76,6 +75,8 @@ if(error) return res.status(400).send(error.details[0].message);
 
 //api for login
 app.post("/login", async (req, res) =>{
+
+
   //申請帳號表單驗證
   const {error} = await loginValidation(req.body);
   if(error) return res.status(400).send(error.details[0].message);
