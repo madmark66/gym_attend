@@ -15,8 +15,9 @@ const brypt = require("bcrypt");
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require("./model/User");
-const {registerValidation, loginValidation} = require('./validation')
-
+const {registerValidation, loginValidation} = require('./validation');
+const jwt = require('jsonwebtoken');
+const verifyJWT = require('./verifyToken');
 
 app.use(express.json()); //可以讓app接受json
 app.use(
@@ -25,9 +26,7 @@ app.use(
   })
 );
 
-app.get("/", (req, res) => {
-  res.json({ message: "ok" });
-});
+
 
 // Connect to mongo DB
 dotenv.config();
@@ -36,27 +35,37 @@ process.env.DB_CONNECT,
 ()=>console.log('connected to db from outside!!')
 );
 
+//root page
+app.get("/", verifyJWT ,(req, res) => {
+  res.send(req.user);
+});
 
 
 //api for register  
 app.post("/register", async (req, res) =>{
+<<<<<<< HEAD
 
 //await res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
   //申請帳號表單驗證
 const {error} = await registerValidation(req.body);
+=======
+  
+  //申請帳號表單驗證(joi)
+const {error} = registerValidation(req.body);
+>>>>>>> b575c4ee8f42ccbe94e9af9fa0d808e1d38907d1
 if(error) return res.status(400).send(error.details[0].message);
 
-  //確認USER是否已存在
-  const emailExist = await User.findOne({email: req.body.email})
+  //確認USER是否已存在(mongoDB)
+  const emailExist = await User.findOne({email: req.body.email});
   if(emailExist) return res.status(400).send('email already exist');
 
 
- //hash password
- const salt = await brypt.genSalt()
+ //hash password(bcrypt)
+ const salt = await brypt.genSalt();
  const hashedPassword = await brypt.hash(req.body.password, salt)
 
- //驗證OK存到DB
+ //驗證OK存到DB(mongoDB)
  
   const user = new User({
     name: req.body.name, 
@@ -75,21 +84,27 @@ if(error) return res.status(400).send(error.details[0].message);
 
 //api for login
 app.post("/login", async (req, res) =>{
+<<<<<<< HEAD
 
 
   //申請帳號表單驗證
+=======
+  //申請帳號表單驗證 (joi)
+>>>>>>> b575c4ee8f42ccbe94e9af9fa0d808e1d38907d1
   const {error} = await loginValidation(req.body);
   if(error) return res.status(400).send(error.details[0].message);
 
-  //確認USER是否已存在
-  const user = await User.findOne({email: req.body.email})
+  //確認USER是否已存在(mongoDB)
+  const user = await User.findOne({email: req.body.email});
   if(!user) return res.status(400).send('email not found');
 
-  //輸入Password 比較DB內Password是否相同
+  //輸入Password 比較DB內Password是否相同(bcrypt)
   const validPass = await brypt.compare(req.body.password, user.password);
-  if(!validPass) return res.status(400).send('wrong password')
+  if(!validPass) return res.status(400).send('wrong password');
 
-  res.send('login!!')
+  //create and assign JWT toekn
+  const token = await jwt.sign({_id: user._id}, process.env.TOKEN_SECRECT);
+  res.header('auth-token', token).send(token);
    
 });
 
