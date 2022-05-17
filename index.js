@@ -18,11 +18,37 @@ const User = require("./model/User");
 const {registerValidation, loginValidation} = require('./validation');
 const jwt = require('jsonwebtoken');
 const verifyJWT = require('./verifyToken');
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const session = require("express-session");
 
 app.use(express.json()); //可以讓app接受json
 app.use(
   express.urlencoded({
     extended: true,
+  })
+);
+
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(
+  session({
+    key: "userId",
+    secret: "subscribe",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      
+      expires: 60 * 60 * 72,
+    },
   })
 );
 
@@ -43,17 +69,11 @@ app.get("/", verifyJWT ,(req, res) => {
 
 //api for register  
 app.post("/register", async (req, res) =>{
-<<<<<<< HEAD
 
-//await res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
-
-  //申請帳號表單驗證
-const {error} = await registerValidation(req.body);
-=======
+res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
   
   //申請帳號表單驗證(joi)
 const {error} = registerValidation(req.body);
->>>>>>> b575c4ee8f42ccbe94e9af9fa0d808e1d38907d1
 if(error) return res.status(400).send(error.details[0].message);
 
   //確認USER是否已存在(mongoDB)
@@ -84,13 +104,8 @@ if(error) return res.status(400).send(error.details[0].message);
 
 //api for login
 app.post("/login", async (req, res) =>{
-<<<<<<< HEAD
-
-
-  //申請帳號表單驗證
-=======
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
   //申請帳號表單驗證 (joi)
->>>>>>> b575c4ee8f42ccbe94e9af9fa0d808e1d38907d1
   const {error} = await loginValidation(req.body);
   if(error) return res.status(400).send(error.details[0].message);
 
@@ -104,7 +119,7 @@ app.post("/login", async (req, res) =>{
 
   //create and assign JWT toekn
   const token = await jwt.sign({_id: user._id}, process.env.TOKEN_SECRECT);
-  res.header('auth-token', token).send(token);
+  await res.header('auth-token', token).send(token);
    
 });
 
