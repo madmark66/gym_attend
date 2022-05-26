@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const classRecords = require('../services/classRecords');
 const db = require('../services/db');
+const session = require("express-session");
+const app = express();
+
 
 router.get('/', async function(req, res, next) {
   try {
