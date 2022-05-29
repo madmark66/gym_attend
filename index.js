@@ -49,10 +49,10 @@ app.use(
     saveUninitialized: false,
     //store: MemoryStore,
     cookie: {
-      //secure: false,
+      //secure: true,
       // httpOnly: true,
-      // sameSite: 'strict',
-      maxAge : 1000 * 60 * 3,
+      //sameSite: 'Lax',
+      maxAge : 1000 * 60 * 10,
       //expires: 1000 * 60 * 10 ,
     },
   })
@@ -67,16 +67,9 @@ process.env.DB_CONNECT,
 ()=>console.log('connected to db from outside!!')
 );
 
-//root page
-app.get("/", verifyJWT ,(req, res) => {
-  res.send(req.user);
-});
 
-//cookie test
-app.get("/cookie", (req, res) => {
-  console.log(req.session);
-  console.log(req.sessionID);
-});
+
+
 
 //api for register  
 app.post("/register", async (req, res) =>{
@@ -117,12 +110,16 @@ if(error) return res.status(400).send(error.details[0].message);
 app.post("/login", async (req, res) =>{
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.set('Access-Control-Allow-Credentials: true');
+  
+  res.set('Access-Control-Allow-Methods : POST, GET, OPTIONS')
+  res.set('Access-Control-Allow-Headers: Content-Type')
+  
   //res.set('Access-Control-Allow-Headers: Content-Type, x-requested-with');
   //申請帳號表單驗證 (joi)
   const {error} = await loginValidation(req.body);
   if(error) return res.status(400).send(error.details[0].message);
 
-  //確認USER是否已存在(mongoDB)
+  //確認USER是否已存在(mongoDB
   const user = await User.findOne({email: req.body.email});
   if(!user) return res.status(400).send('email not found');
 
@@ -136,7 +133,7 @@ app.post("/login", async (req, res) =>{
 
   req.session.email = req.body.email;
   //save to session store
-  console.log(req.session);
+  
   // req.session.user = user.email;
 
   //save sessionId to browser cookie
@@ -146,18 +143,32 @@ app.post("/login", async (req, res) =>{
   req.session.isAuth = true;
   // await res.setHeader('Set-Cookie','eatddd=pizza');
  //res.cookie('foo','bar'); 
+  console.log(req.session);
+  console.log(req.session.email);
   res.send(req.session.isAuth); 
 });
 
 // isAuth middleware for checking login status
 const isAuth = (req, res, next) => {
   
-  if(req.session.email) {
+  if(req.session.isAuth) {
+    console.log('auth ok');
     next();
   } else {
     res.send('no auth 1');
   }
 };
+
+//root page
+// app.get("/", isAuth ,(req, res) => {
+//   res.send('root!');
+// });
+
+//cookie test
+app.get("/cookie", (req, res) => {
+  console.log(req.session);
+  console.log(req.sessionID);
+});
 
 //api for many different pages
 app.use("/class-records",classRecordsRouter);
@@ -171,6 +182,11 @@ app.use(cors());
 
 //api for addNewRecord
 app.post("/addNewRecord", isAuth,(req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Credentials: true');
+  
+  res.set('Access-Control-Allow-Methods : POST, GET, OPTIONS')
+  res.set('Access-Control-Allow-Headers: Content-Type')
 
   const member_name = req.body.member_name;
   const lesson_name = req.body.lesson_name;
