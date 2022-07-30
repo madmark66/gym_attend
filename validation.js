@@ -14,7 +14,7 @@ const registerValidation = (data) => {
 //login帳號表單驗證設定
 const loginValidation = (data) => {
     const schema = Joi.object({
-        email: Joi.string().min(6).required().email(),
+        email: Joi.string().min(6).required(),
         password: Joi.string().min(6).required()
     });
 
